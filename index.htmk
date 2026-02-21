@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paperfy</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+
+body {
+  background: #000;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.glass-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-card:hover {
+  border-color: rgba(255,255,255,0.15);
+}
+
+.upload-zone {
+  border: 2px dashed rgba(255,255,255,0.15);
+  transition: all 0.3s ease;
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.03);
+}
+
+.toggle-track {
+  width: 200px;
+  height: 44px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 22px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-indicator {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 97px;
+  height: 36px;
+  background: #fff;
+  border-radius: 19px;
+  transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.toggle-indicator.animated {
+  transform: translateX(96px);
+}
+
+.toggle-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: color 0.3s ease;
+  z-index: 1;
+  user-select: none;
+}
+
+.btn-primary {
+  background: #fff;
+  color: #000;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #e5e5e5;
+  transform: scale(0.98);
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+}
+
+.btn-primary:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.slider-track {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  outline: none;
+}
+
+.slider-track::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.slider-track::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.preview-container {
+  background: repeating-conic-gradient(rgba(255,255,255,0.03) 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.1); }
+  50% { box-shadow: 0 0 20px 5px rgba(255,255,255,0.05); }
+}
+
+.processing {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+canvas { display: none; }
+
+.result-img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+}
+
+.spinner {
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top: 3px solid #fff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+</head>
+<body class="flex flex-col items-center justify-start px-4 py-12">
+
+  <!-- Header -->
+  <header class="text-center mb-12 fade-in">
+    <h1 class="text-5xl font-bold tracking-tight mb-2" style="letter-spacing:-0.04em;">Paperfy</h1>
+    <p class="text-sm text-neutral-500 font-light tracking-wide">Transform any image into wrinkled paper art.</p>
+  </header>
+
+  <!-- Main Card -->
+  <main class="w-full max-w-xl fade-in" style="animation-delay:0.1s;">
+
+    <!-- Upload Zone -->
+    <div id="uploadZone" class="upload-zone rounded-2xl p-10 text-center cursor-pointer mb-6 transition-all">
+      <div id="uploadContent">
+        <svg class="mx-auto mb-4 text-neutral-600" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+        </svg>
+        <p class="text-neutral-400 text-sm font-medium mb-1">Drop your PNG here</p>
+        <p class="text-neutral-600 text-xs">or click to browse</p>
+      </div>
+      <div id="uploadPreview" class="hidden">
+        <img id="previewThumb" class="mx-auto max-h-32 rounded-lg mb-3" />
+        <p id="fileName" class="text-neutral-400 text-sm font-medium"></p>
+        <p class="text-neutral-600 text-xs mt-1">Click to change</p>
+      </div>
+      <input type="file" id="fileInput" accept="image/png" class="hidden" />
+    </div>
+
+    <!-- Mode Toggle -->
+    <div class="glass-card rounded-2xl p-6 mb-6">
+      <label class="text-xs text-neutral-500 font-medium uppercase tracking-widest mb-4 block">Output Mode</label>
+      <div class="flex justify-center">
+        <div id="toggleTrack" class="toggle-track" onclick="toggleMode()">
+          <div id="toggleIndicator" class="toggle-indicator"></div>
+          <span id="labelStill" class="toggle-label left-0 w-1/2 text-center text-black">Still</span>
+          <span id="labelAnimated" class="toggle-label right-0 w-1/2 text-center text-neutral-500">Animated</span>
+        </div>
+      </div>
+
+      <!-- Animated Options (hidden by default) -->
+      <div id="animatedOptions" class="mt-6 hidden">
+        <label class="text-xs text-neutral-500 font-medium uppercase tracking-widest mb-3 block">Frame Interval</label>
+        <div class="flex items-center gap-4">
+          <input type="range" id="intervalSlider" class="slider-track flex-1" min="50" max="1000" value="300" step="50" oninput="updateIntervalLabel()">
+          <span id="intervalLabel" class="text-sm text-neutral-300 font-medium w-16 text-right">300ms</span>
+        </div>
+        <p class="text-xs text-neutral-600 mt-2">Speed of paper wrinkle animation</p>
+      </div>
+    </div>
+
+    <!-- Generate Button -->
+    <button id="generateBtn" class="btn-primary w-full py-4 rounded-2xl text-base disabled:opacity-30 mb-6 flex items-center justify-center gap-2" disabled onclick="generate()">
+      <span id="btnText">Generate</span>
+      <div id="btnSpinner" class="spinner hidden"></div>
+    </button>
+
+    <!-- Result -->
+    <div id="resultSection" class="hidden">
+      <div class="glass-card rounded-2xl p-6">
+        <label class="text-xs text-neutral-500 font-medium uppercase tracking-widest mb-4 block">Result</label>
+        <div class="preview-container rounded-xl p-4 flex items-center justify-center min-h-[200px]">
+          <img id="resultImage" class="result-img rounded-lg" />
+        </div>
+        <button id="downloadBtn" class="btn-primary w-full py-3.5 rounded-xl text-sm mt-4" onclick="downloadResult()">
+          Download
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-16 text-center fade-in" style="animation-delay:0.2s;">
+    <p class="text-neutral-700 text-xs">Crafted with precision.</p>
+  </footer>
+
+  <!-- Hidden Canvases -->
+  <canvas id="canvasMain"></canvas>
+  <canvas id="canvasMask"></canvas>
+  <canvas id="canvasOut"></canvas>
+  <canvas id="canvasFrame1"></canvas>
+  <canvas id="canvasFrame2"></canvas>
+
+  <!-- GIF Encoder (gif.js via CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+
+<script>
+  // State
+  let mode = 'still'; // 'still' | 'animated'
+  let uploadedImage = null;
+  let resultBlob = null;
+  let resultFileName = 'paperfy.png';
+
+  const paperURL1 = 'https://raw.githubusercontent.com/corrodedfridge-tech/paperfy/main/animatedpaper/wrinkleduppaper1.png';
+  const paperURL2 = 'https://raw.githubusercontent.com/corrodedfridge-tech/paperfy/main/animatedpaper/wrinkleduppaper2.png';
+
+  // Preload paper textures
+  let paperImg1 = new Image();
+  let paperImg2 = new Image();
+  paperImg1.crossOrigin = 'anonymous';
+  paperImg2.crossOrigin = 'anonymous';
+  paperImg1.src = paperURL1;
+  paperImg2.src = paperURL2;
+
+  // Upload handling
+  const uploadZone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('fileInput');
+  const uploadContent = document.getElementById('uploadContent');
+  const uploadPreview = document.getElementById('uploadPreview');
+  const previewThumb = document.getElementById('previewThumb');
+  const fileNameEl = document.getElementById('fileName');
+  const generateBtn = document.getElementById('generateBtn');
+
+  uploadZone.addEventListener('click', () => fileInput.click());
+  uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+  uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('dragover');
+  });
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        uploadedImage = img;
+        previewThumb.src = e.target.result;
+        fileNameEl.textContent = file.name;
+        uploadContent.classList.add('hidden');
+        uploadPreview.classList.remove('hidden');
+        generateBtn.disabled = false;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Mode toggle
+  function toggleMode() {
+    if (mode === 'still') {
+      mode = 'animated';
+      document.getElementById('toggleIndicator').classList.add('animated');
+      document.getElementById('labelStill').classList.remove('text-black');
+      document.getElementById('labelStill').classList.add('text-neutral-500');
+      document.getElementById('labelAnimated').classList.remove('text-neutral-500');
+      document.getElementById('labelAnimated').classList.add('text-black');
+      document.getElementById('animatedOptions').classList.remove('hidden');
+    } else {
+      mode = 'still';
+      document.getElementById('toggleIndicator').classList.remove('animated');
+      document.getElementById('labelStill').classList.add('text-black');
+      document.getElementById('labelStill').classList.remove('text-neutral-500');
+      document.getElementById('labelAnimated').classList.add('text-neutral-500');
+      document.getElementById('labelAnimated').classList.remove('text-black');
+      document.getElementById('animatedOptions').classList.add('hidden');
+    }
+  }
+
+  function updateIntervalLabel() {
+    const val = document.getElementById('intervalSlider').value;
+    document.getElementById('intervalLabel').textContent = val + 'ms';
+  }
+
+  // Extract the alpha/shape outline from the uploaded image
+  function getOutlineMask(srcImg, w, h, thickness) {
+    const cMask = document.getElementById('canvasMask');
+    cMask.width = w;
+    cMask.height = h;
+    const ctx = cMask.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(srcImg, 0, 0, w, h);
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+
+    // Create alpha map
+    const alpha = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      alpha[i] = data[i * 4 + 3] > 20 ? 1 : 0;
+    }
+
+    // Detect edge pixels (pixels that are opaque but have a transparent neighbor within thickness)
+    const edge = new Uint8Array(w * h);
+    const filled = new Uint8Array(w * h);
+
+    // Mark filled (interior) area
+    for (let i = 0; i < w * h; i++) {
+      filled[i] = alpha[i];
+    }
+
+    // Outline: dilate the boundary
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (alpha[y * w + x] === 0) continue;
+        let isEdge = false;
+        for (let dy = -thickness; dy <= thickness && !isEdge; dy++) {
+          for (let dx = -thickness; dx <= thickness && !isEdge; dx++) {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) { isEdge = true; break; }
+            if (alpha[ny * w + nx] === 0) isEdge = true;
+          }
+        }
+        if (isEdge) edge[y * w + x] = 1;
+      }
+    }
+
+    return { alpha, edge, filled };
+  }
+
+  // Composite: paper texture clipped to the image shape, with a dark outline
+  function compositeFrame(paperImg, srcImg, w, h) {
+    const c = document.getElementById('canvasOut');
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw the uploaded image as a clipping shape
+    // Step 1: Draw the source image to create the shape
+    ctx.drawImage(srcImg, 0, 0, w, h);
+
+    // Step 2: Use 'source-in' to fill the shape with paper texture
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.drawImage(paperImg, 0, 0, w, h);
+
+    // Step 3: Reset composite, draw outline
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Get outline mask
+    const { edge } = getOutlineMask(srcImg, w, h, Math.max(2, Math.round(Math.min(w, h) / 200)));
+    const outlineData = ctx.getImageData(0, 0, w, h);
+    const od = outlineData.data;
+    for (let i = 0; i < w * h; i++) {
+      if (edge[i]) {
+        od[i * 4] = 60;
+        od[i * 4 + 1] = 55;
+        od[i * 4 + 2] = 50;
+        od[i * 4 + 3] = 220;
+      }
+    }
+    ctx.putImageData(outlineData, 0, 0);
+
+    return c;
+  }
+
+  async function generate() {
+    if (!uploadedImage) return;
+
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const resultSection = document.getElementById('resultSection');
+    const resultImage = document.getElementById('resultImage');
+
+    generateBtn.disabled = true;
+    btnText.textContent = 'Processing...';
+    btnSpinner.classList.remove('hidden');
+
+    // Wait for paper textures to load
+    await Promise.all([
+      new Promise(r => { if (paperImg1.complete) r(); else paperImg1.onload = r; }),
+      new Promise(r => { if (paperImg2.complete) r(); else paperImg2.onload = r; }),
+    ]);
+
+    const w = uploadedImage.width;
+    const h = uploadedImage.height;
+
+    if (mode === 'still') {
+      // Generate still image
+      const canvas = compositeFrame(paperImg1, uploadedImage, w, h);
+      canvas.toBlob((blob) => {
+        resultBlob = blob;
+        resultFileName = 'paperfy.png';
+        resultImage.src = URL.createObjectURL(blob);
+        resultSection.classList.remove('hidden');
+        resultSection.classList.add('fade-in');
+        btnText.textContent = 'Generate';
+        btnSpinner.classList.add('hidden');
+        generateBtn.disabled = false;
+        document.getElementById('downloadBtn').textContent = 'Download PNG';
+      }, 'image/png');
+    } else {
+      // Generate animated GIF
+      const interval = parseInt(document.getElementById('intervalSlider').value);
+
+      // Render frame 1
+      const c1 = compositeFrame(paperImg1, uploadedImage, w, h);
+      const frame1Data = c1.getContext('2d').getImageData(0, 0, w, h);
+
+      // Render frame 2
+      const c2 = compositeFrame(paperImg2, uploadedImage, w, h);
+      const frame2Data = c2.getContext('2d').getImageData(0, 0, w, h);
+
+      // Build GIF
+      const gif = new GIF({
+        workers: 2,
+        quality: 10,
+        width: w,
+        height: h,
+        workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js',
+        transparent: 0x00000000,
+      });
+
+      // Frame canvases
+      const fc1 = document.getElementById('canvasFrame1');
+      fc1.width = w; fc1.height = h;
+      const fctx1 = fc1.getContext('2d');
+      fctx1.putImageData(frame1Data, 0, 0);
+
+      const fc2 = document.getElementById('canvasFrame2');
+      fc2.width = w; fc2.height = h;
+      const fctx2 = fc2.getContext('2d');
+      fctx2.putImageData(frame2Data, 0, 0);
+
+      gif.addFrame(fc1, { delay: interval, copy: true });
+      gif.addFrame(fc2, { delay: interval, copy: true });
+
+      gif.on('finished', (blob) => {
+        resultBlob = blob;
+        resultFileName = 'paperfy.gif';
+        resultImage.src = URL.createObjectURL(blob);
+        resultSection.classList.remove('hidden');
+        resultSection.classList.add('fade-in');
+        btnText.textContent = 'Generate';
+        btnSpinner.classList.add('hidden');
+        generateBtn.disabled = false;
+        document.getElementById('downloadBtn').textContent = 'Download GIF';
+      });
+
+      gif.render();
+    }
+  }
+
+  function downloadResult() {
+    if (!resultBlob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(resultBlob);
+    a.download = resultFileName;
+    a.click();
+  }
+</script>
+
+</body>
+</html>
