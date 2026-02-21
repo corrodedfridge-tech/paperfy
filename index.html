@@ -5,318 +5,296 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Paperfy</title>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-* { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-body {
-  background: #000;
-  color: #fff;
-  min-height: 100vh;
-}
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0a0a0a;
+    color: #f5f5f7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-.glass-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
+  .grain {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+  }
 
-.glass-card:hover {
-  border-color: rgba(255,255,255,0.15);
-}
+  .glass-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+  }
 
-.upload-zone {
-  border: 2px dashed rgba(255,255,255,0.15);
-  transition: all 0.3s ease;
-}
+  .upload-zone {
+    border: 2px dashed rgba(255,255,255,0.15);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.05);
+  }
 
-.upload-zone:hover, .upload-zone.dragover {
-  border-color: rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.03);
-}
+  .toggle-track {
+    width: 200px; height: 44px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 22px;
+    position: relative;
+    cursor: pointer;
+  }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 97px; height: 38px;
+    background: #fff;
+    border-radius: 19px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .toggle-track.animated .toggle-thumb {
+    transform: translateX(97px);
+  }
+  .toggle-label {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 13px; font-weight: 600;
+    transition: color 0.3s;
+    z-index: 1;
+  }
+  .toggle-label.left { left: 24px; }
+  .toggle-label.right { right: 18px; }
+  .toggle-track .toggle-label.left { color: #000; }
+  .toggle-track .toggle-label.right { color: rgba(255,255,255,0.5); }
+  .toggle-track.animated .toggle-label.left { color: rgba(255,255,255,0.5); }
+  .toggle-track.animated .toggle-label.right { color: #000; }
 
-.toggle-track {
-  width: 200px;
-  height: 44px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 22px;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
+  .slider-container input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px; outline: none;
+  }
+  .slider-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
 
-.toggle-indicator {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 97px;
-  height: 36px;
-  background: #fff;
-  border-radius: 19px;
-  transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
-}
+  .thickness-slider input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px; outline: none;
+  }
+  .thickness-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
 
-.toggle-indicator.animated {
-  transform: translateX(96px);
-}
+  .btn-primary {
+    background: #fff; color: #000;
+    font-weight: 600; font-size: 15px;
+    padding: 14px 32px;
+    border-radius: 12px; border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-primary:hover { background: #e0e0e0; transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 
-.toggle-label {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  transition: color 0.3s ease;
-  z-index: 1;
-  user-select: none;
-}
+  .preview-area {
+    background: repeating-conic-gradient(rgba(255,255,255,0.05) 0% 25%, transparent 0% 50%) 0 0 / 20px 20px;
+    border-radius: 16px;
+    min-height: 300px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .preview-area img, .preview-area canvas {
+    max-width: 100%; max-height: 500px; object-fit: contain;
+  }
 
-.btn-primary {
-  background: #fff;
-  color: #000;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  transition: all 0.2s ease;
-}
+  .fade-in { animation: fadeIn 0.5s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.btn-primary:hover {
-  background: #e5e5e5;
-  transform: scale(0.98);
-}
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-.btn-primary:active {
-  transform: scale(0.96);
-}
-
-.btn-primary:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.slider-track {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 4px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 2px;
-  outline: none;
-}
-
-.slider-track::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background: #fff;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-}
-
-.slider-track::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: #fff;
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-}
-
-.preview-container {
-  background: repeating-conic-gradient(rgba(255,255,255,0.03) 0% 25%, transparent 0% 50%) 50% / 20px 20px;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-.fade-in {
-  animation: fadeIn 0.5s ease forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.1); }
-  50% { box-shadow: 0 0 20px 5px rgba(255,255,255,0.05); }
-}
-
-.processing {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-canvas { display: none; }
-
-.result-img {
-  max-width: 100%;
-  max-height: 400px;
-  object-fit: contain;
-}
-
-.spinner {
-  border: 3px solid rgba(255,255,255,0.1);
-  border-top: 3px solid #fff;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+  .hero-glow {
+    position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 400px;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
 </style>
 </head>
-<body class="flex flex-col items-center justify-start px-4 py-12">
+<body>
+<div class="grain"></div>
 
-  <!-- Header -->
-  <header class="text-center mb-12 fade-in">
-    <h1 class="text-5xl font-bold tracking-tight mb-2" style="letter-spacing:-0.04em;">Paperfy</h1>
-    <p class="text-sm text-neutral-500 font-light tracking-wide">Transform any image into wrinkled paper art.</p>
-  </header>
+<div class="relative z-10 max-w-3xl mx-auto px-6 py-16">
+  <!-- Hero -->
+  <div class="relative text-center mb-16">
+    <div class="hero-glow"></div>
+    <h1 class="text-5xl font-bold tracking-tight mb-3" style="letter-spacing:-0.03em;">Paperfy</h1>
+    <p class="text-lg text-white/40 font-light">Transform any shape into a wrinkled paper outline.</p>
+  </div>
 
-  <!-- Main Card -->
-  <main class="w-full max-w-xl fade-in" style="animation-delay:0.1s;">
-
-    <!-- Upload Zone -->
-    <div id="uploadZone" class="upload-zone rounded-2xl p-10 text-center cursor-pointer mb-6 transition-all">
+  <!-- Upload -->
+  <div class="glass-card p-8 mb-8 fade-in">
+    <div class="upload-zone p-12 text-center" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/png" class="hidden">
       <div id="uploadContent">
-        <svg class="mx-auto mb-4 text-neutral-600" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+        <svg class="mx-auto mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
         </svg>
-        <p class="text-neutral-400 text-sm font-medium mb-1">Drop your PNG here</p>
-        <p class="text-neutral-600 text-xs">or click to browse</p>
+        <p class="text-white/50 text-sm">Drop your PNG here or <span class="text-white/80 underline">browse</span></p>
+        <p class="text-white/25 text-xs mt-2">Transparent PNG works best</p>
       </div>
-      <div id="uploadPreview" class="hidden">
-        <img id="previewThumb" class="mx-auto max-h-32 rounded-lg mb-3" />
-        <p id="fileName" class="text-neutral-400 text-sm font-medium"></p>
-        <p class="text-neutral-600 text-xs mt-1">Click to change</p>
+      <div id="uploadedInfo" class="hidden">
+        <p class="text-white/70 text-sm" id="fileName"></p>
+        <p class="text-white/30 text-xs mt-1">Click to change</p>
       </div>
-      <input type="file" id="fileInput" accept="image/png" class="hidden" />
     </div>
+  </div>
 
-    <!-- Mode Toggle -->
-    <div class="glass-card rounded-2xl p-6 mb-6">
-      <label class="text-xs text-neutral-500 font-medium uppercase tracking-widest mb-4 block">Output Mode</label>
-      <div class="flex justify-center">
-        <div id="toggleTrack" class="toggle-track" onclick="toggleMode()">
-          <div id="toggleIndicator" class="toggle-indicator"></div>
-          <span id="labelStill" class="toggle-label left-0 w-1/2 text-center text-black">Still</span>
-          <span id="labelAnimated" class="toggle-label right-0 w-1/2 text-center text-neutral-500">Animated</span>
+  <!-- Controls -->
+  <div class="glass-card p-8 mb-8 fade-in" style="animation-delay:0.1s;" id="controlsCard">
+    <div class="flex flex-col items-center gap-8">
+      <!-- Mode toggle -->
+      <div>
+        <p class="text-xs text-white/30 uppercase tracking-widest mb-3 text-center">Mode</p>
+        <div class="toggle-track" id="modeToggle">
+          <div class="toggle-thumb"></div>
+          <span class="toggle-label left">Still</span>
+          <span class="toggle-label right">Animated</span>
         </div>
       </div>
 
-      <!-- Animated Options (hidden by default) -->
-      <div id="animatedOptions" class="mt-6 hidden">
-        <label class="text-xs text-neutral-500 font-medium uppercase tracking-widest mb-3 block">Frame Interval</label>
-        <div class="flex items-center gap-4">
-          <input type="range" id="intervalSlider" class="slider-track flex-1" min="50" max="1000" value="300" step="50" oninput="updateIntervalLabel()">
-          <span id="intervalLabel" class="text-sm text-neutral-300 font-medium w-16 text-right">300ms</span>
+      <!-- Outline thickness -->
+      <div class="w-full max-w-xs thickness-slider">
+        <div class="flex justify-between mb-2">
+          <p class="text-xs text-white/30 uppercase tracking-widest">Outline Thickness</p>
+          <span class="text-xs text-white/50" id="thicknessValue">3px</span>
         </div>
-        <p class="text-xs text-neutral-600 mt-2">Speed of paper wrinkle animation</p>
+        <input type="range" id="thicknessSlider" min="1" max="20" value="3">
       </div>
-    </div>
 
-    <!-- Generate Button -->
-    <button id="generateBtn" class="btn-primary w-full py-4 rounded-2xl text-base disabled:opacity-30 mb-6 flex items-center justify-center gap-2" disabled onclick="generate()">
-      <span id="btnText">Generate</span>
-      <div id="btnSpinner" class="spinner hidden"></div>
-    </button>
-
-    <!-- Result -->
-    <div id="resultSection" class="hidden">
-      <div class="glass-card rounded-2xl p-6">
-        <label class="text-xs text-neutral-500 font-medium uppercase tracking-widest mb-4 block">Result</label>
-        <div class="preview-container rounded-xl p-4 flex items-center justify-center min-h-[200px]">
-          <img id="resultImage" class="result-img rounded-lg" />
+      <!-- Interval (animated only) -->
+      <div class="w-full max-w-xs slider-container hidden" id="intervalControl">
+        <div class="flex justify-between mb-2">
+          <p class="text-xs text-white/30 uppercase tracking-widest">Frame Interval</p>
+          <span class="text-xs text-white/50" id="intervalValue">500ms</span>
         </div>
-        <button id="downloadBtn" class="btn-primary w-full py-3.5 rounded-xl text-sm mt-4" onclick="downloadResult()">
-          Download
-        </button>
+        <input type="range" id="intervalSlider" min="50" max="2000" value="500" step="50">
       </div>
-    </div>
 
-  </main>
+      <!-- Generate -->
+      <button class="btn-primary" id="generateBtn" disabled>Generate</button>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="glass-card p-8 fade-in hidden" style="animation-delay:0.2s;" id="previewCard">
+    <div class="flex justify-between items-center mb-4">
+      <p class="text-xs text-white/30 uppercase tracking-widest">Result</p>
+      <button class="btn-primary text-sm !py-2 !px-5" id="downloadBtn" style="font-size:13px;">Download</button>
+    </div>
+    <div class="preview-area" id="previewArea">
+      <p class="text-white/20 text-sm" id="previewPlaceholder">Your result will appear here</p>
+    </div>
+  </div>
 
   <!-- Footer -->
-  <footer class="mt-16 text-center fade-in" style="animation-delay:0.2s;">
-    <p class="text-neutral-700 text-xs">Crafted with precision.</p>
-  </footer>
-
-  <!-- Hidden Canvases -->
-  <canvas id="canvasMain"></canvas>
-  <canvas id="canvasMask"></canvas>
-  <canvas id="canvasOut"></canvas>
-  <canvas id="canvasFrame1"></canvas>
-  <canvas id="canvasFrame2"></canvas>
-
-  <!-- GIF Encoder (gif.js via CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+  <p class="text-center text-white/15 text-xs mt-12">Paperfy — Made with precision.</p>
+</div>
 
 <script>
-  // State
-  let mode = 'still'; // 'still' | 'animated'
-  let uploadedImage = null;
-  let resultBlob = null;
-  let resultFileName = 'paperfy.png';
-
-  const paperURL1 = 'https://raw.githubusercontent.com/corrodedfridge-tech/paperfy/main/animatedpaper/wrinkleduppaper1.png';
-  const paperURL2 = 'https://raw.githubusercontent.com/corrodedfridge-tech/paperfy/main/animatedpaper/wrinkleduppaper2.png';
-
-  // Preload paper textures
-  let paperImg1 = new Image();
-  let paperImg2 = new Image();
-  paperImg1.crossOrigin = 'anonymous';
-  paperImg2.crossOrigin = 'anonymous';
-  paperImg1.src = paperURL1;
-  paperImg2.src = paperURL2;
-
-  // Upload handling
+  // --- ELEMENTS ---
   const uploadZone = document.getElementById('uploadZone');
   const fileInput = document.getElementById('fileInput');
   const uploadContent = document.getElementById('uploadContent');
-  const uploadPreview = document.getElementById('uploadPreview');
-  const previewThumb = document.getElementById('previewThumb');
+  const uploadedInfo = document.getElementById('uploadedInfo');
   const fileNameEl = document.getElementById('fileName');
+  const modeToggle = document.getElementById('modeToggle');
+  const intervalControl = document.getElementById('intervalControl');
+  const intervalSlider = document.getElementById('intervalSlider');
+  const intervalValue = document.getElementById('intervalValue');
+  const thicknessSlider = document.getElementById('thicknessSlider');
+  const thicknessValue = document.getElementById('thicknessValue');
   const generateBtn = document.getElementById('generateBtn');
+  const previewCard = document.getElementById('previewCard');
+  const previewArea = document.getElementById('previewArea');
+  const previewPlaceholder = document.getElementById('previewPlaceholder');
+  const downloadBtn = document.getElementById('downloadBtn');
 
+  let uploadedImage = null;
+  let isAnimated = false;
+  let resultBlob = null;
+  let resultFileName = '';
+
+  const PAPER_URL_1 = 'https://raw.githubusercontent.com/corrodedfridge-tech/paperfy/main/animatedpaper/wrinkleduppaper1.png';
+  const PAPER_URL_2 = 'https://raw.githubusercontent.com/corrodedfridge-tech/paperfy/main/animatedpaper/wrinkleduppaper2.png';
+
+  let paperImg1 = null;
+  let paperImg2 = null;
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  // Preload paper textures
+  Promise.all([loadImage(PAPER_URL_1), loadImage(PAPER_URL_2)]).then(([p1, p2]) => {
+    paperImg1 = p1;
+    paperImg2 = p2;
+  }).catch(e => console.warn('Paper textures failed to load:', e));
+
+  // --- UPLOAD ---
   uploadZone.addEventListener('click', () => fileInput.click());
-  uploadZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadZone.classList.add('dragover');
-  });
-  uploadZone.addEventListener('dragleave', () => {
-    uploadZone.classList.remove('dragover');
-  });
-  uploadZone.addEventListener('drop', (e) => {
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', e => {
     e.preventDefault();
     uploadZone.classList.remove('dragover');
-    if (e.dataTransfer.files.length > 0) {
-      handleFile(e.dataTransfer.files[0]);
-    }
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
   });
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) handleFile(e.target.files[0]);
-  });
+  fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
 
   function handleFile(file) {
-    if (!file.type.startsWith('image/')) return;
+    if (!file.type.includes('png')) { alert('Please upload a PNG file.'); return; }
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       const img = new Image();
       img.onload = () => {
         uploadedImage = img;
-        previewThumb.src = e.target.result;
-        fileNameEl.textContent = file.name;
         uploadContent.classList.add('hidden');
-        uploadPreview.classList.remove('hidden');
+        uploadedInfo.classList.remove('hidden');
+        fileNameEl.textContent = file.name + ' (' + img.width + '×' + img.height + ')';
         generateBtn.disabled = false;
       };
       img.src = e.target.result;
@@ -324,207 +302,187 @@ canvas { display: none; }
     reader.readAsDataURL(file);
   }
 
-  // Mode toggle
-  function toggleMode() {
-    if (mode === 'still') {
-      mode = 'animated';
-      document.getElementById('toggleIndicator').classList.add('animated');
-      document.getElementById('labelStill').classList.remove('text-black');
-      document.getElementById('labelStill').classList.add('text-neutral-500');
-      document.getElementById('labelAnimated').classList.remove('text-neutral-500');
-      document.getElementById('labelAnimated').classList.add('text-black');
-      document.getElementById('animatedOptions').classList.remove('hidden');
-    } else {
-      mode = 'still';
-      document.getElementById('toggleIndicator').classList.remove('animated');
-      document.getElementById('labelStill').classList.add('text-black');
-      document.getElementById('labelStill').classList.remove('text-neutral-500');
-      document.getElementById('labelAnimated').classList.add('text-neutral-500');
-      document.getElementById('labelAnimated').classList.remove('text-black');
-      document.getElementById('animatedOptions').classList.add('hidden');
-    }
-  }
+  // --- MODE TOGGLE ---
+  modeToggle.addEventListener('click', () => {
+    isAnimated = !isAnimated;
+    modeToggle.classList.toggle('animated', isAnimated);
+    intervalControl.classList.toggle('hidden', !isAnimated);
+  });
 
-  function updateIntervalLabel() {
-    const val = document.getElementById('intervalSlider').value;
-    document.getElementById('intervalLabel').textContent = val + 'ms';
-  }
+  intervalSlider.addEventListener('input', () => {
+    intervalValue.textContent = intervalSlider.value + 'ms';
+  });
 
-  // Extract the alpha/shape outline from the uploaded image
-  function getOutlineMask(srcImg, w, h, thickness) {
-    const cMask = document.getElementById('canvasMask');
-    cMask.width = w;
-    cMask.height = h;
-    const ctx = cMask.getContext('2d');
-    ctx.clearRect(0, 0, w, h);
-    ctx.drawImage(srcImg, 0, 0, w, h);
-    const imgData = ctx.getImageData(0, 0, w, h);
-    const data = imgData.data;
+  thicknessSlider.addEventListener('input', () => {
+    thicknessValue.textContent = thicknessSlider.value + 'px';
+  });
 
-    // Create alpha map
-    const alpha = new Uint8Array(w * h);
+  // --- OUTLINE EXTRACTION ---
+  // Creates a mask that is ONLY the outline (edge pixels) of the opaque region
+  function createOutlineMask(sourceImg, thickness) {
+    const w = sourceImg.width;
+    const h = sourceImg.height;
+
+    // Get alpha channel of source
+    const srcCanvas = document.createElement('canvas');
+    srcCanvas.width = w; srcCanvas.height = h;
+    const srcCtx = srcCanvas.getContext('2d');
+    srcCtx.drawImage(sourceImg, 0, 0);
+    const srcData = srcCtx.getImageData(0, 0, w, h);
+    const alpha = srcData.data;
+
+    // Build binary alpha map (1 = opaque, 0 = transparent)
+    const opaque = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) {
-      alpha[i] = data[i * 4 + 3] > 20 ? 1 : 0;
+      opaque[i] = alpha[i * 4 + 3] > 30 ? 1 : 0;
     }
 
-    // Detect edge pixels (pixels that are opaque but have a transparent neighbor within thickness)
-    const edge = new Uint8Array(w * h);
-    const filled = new Uint8Array(w * h);
-
-    // Mark filled (interior) area
-    for (let i = 0; i < w * h; i++) {
-      filled[i] = alpha[i];
-    }
-
-    // Outline: dilate the boundary
+    // Erode: a pixel is "interior" if ALL pixels within `thickness` radius are opaque
+    const interior = new Uint8Array(w * h);
+    const r = thickness;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        if (alpha[y * w + x] === 0) continue;
-        let isEdge = false;
-        for (let dy = -thickness; dy <= thickness && !isEdge; dy++) {
-          for (let dx = -thickness; dx <= thickness && !isEdge; dx++) {
+        const idx = y * w + x;
+        if (!opaque[idx]) { interior[idx] = 0; continue; }
+        let allOpaque = true;
+        for (let dy = -r; dy <= r && allOpaque; dy++) {
+          for (let dx = -r; dx <= r && allOpaque; dx++) {
+            if (dx * dx + dy * dy > r * r) continue;
             const nx = x + dx, ny = y + dy;
-            if (nx < 0 || ny < 0 || nx >= w || ny >= h) { isEdge = true; break; }
-            if (alpha[ny * w + nx] === 0) isEdge = true;
+            if (nx < 0 || nx >= w || ny < 0 || ny >= h) { allOpaque = false; break; }
+            if (!opaque[ny * w + nx]) allOpaque = false;
           }
         }
-        if (isEdge) edge[y * w + x] = 1;
+        interior[idx] = allOpaque ? 1 : 0;
       }
     }
 
-    return { alpha, edge, filled };
-  }
-
-  // Composite: paper texture clipped to the image shape, with a dark outline
-  function compositeFrame(paperImg, srcImg, w, h) {
-    const c = document.getElementById('canvasOut');
-    c.width = w;
-    c.height = h;
-    const ctx = c.getContext('2d');
-    ctx.clearRect(0, 0, w, h);
-
-    // Draw the uploaded image as a clipping shape
-    // Step 1: Draw the source image to create the shape
-    ctx.drawImage(srcImg, 0, 0, w, h);
-
-    // Step 2: Use 'source-in' to fill the shape with paper texture
-    ctx.globalCompositeOperation = 'source-in';
-    ctx.drawImage(paperImg, 0, 0, w, h);
-
-    // Step 3: Reset composite, draw outline
-    ctx.globalCompositeOperation = 'source-over';
-
-    // Get outline mask
-    const { edge } = getOutlineMask(srcImg, w, h, Math.max(2, Math.round(Math.min(w, h) / 200)));
-    const outlineData = ctx.getImageData(0, 0, w, h);
-    const od = outlineData.data;
+    // Outline = opaque AND NOT interior
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = w; maskCanvas.height = h;
+    const maskCtx = maskCanvas.getContext('2d');
+    const maskData = maskCtx.createImageData(w, h);
     for (let i = 0; i < w * h; i++) {
-      if (edge[i]) {
-        od[i * 4] = 60;
-        od[i * 4 + 1] = 55;
-        od[i * 4 + 2] = 50;
-        od[i * 4 + 3] = 220;
+      if (opaque[i] && !interior[i]) {
+        maskData.data[i * 4 + 0] = 255;
+        maskData.data[i * 4 + 1] = 255;
+        maskData.data[i * 4 + 2] = 255;
+        maskData.data[i * 4 + 3] = 255;
       }
     }
-    ctx.putImageData(outlineData, 0, 0);
-
-    return c;
+    maskCtx.putImageData(maskData, 0, 0);
+    return maskCanvas;
   }
 
-  async function generate() {
-    if (!uploadedImage) return;
+  // Render one frame: paper texture clipped to outline mask
+  function renderFrame(paperImg, sourceImg, thickness) {
+    const w = sourceImg.width;
+    const h = sourceImg.height;
+    const outlineMask = createOutlineMask(sourceImg, thickness);
 
-    const btnText = document.getElementById('btnText');
-    const btnSpinner = document.getElementById('btnSpinner');
-    const resultSection = document.getElementById('resultSection');
-    const resultImage = document.getElementById('resultImage');
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    // Draw the outline mask
+    ctx.drawImage(outlineMask, 0, 0);
+
+    // Use source-in to clip paper texture to the outline only
+    ctx.globalCompositeOperation = 'source-in';
+
+    // Tile the paper texture to cover the full canvas
+    const pw = paperImg.width;
+    const ph = paperImg.height;
+    for (let ty = 0; ty < h; ty += ph) {
+      for (let tx = 0; tx < w; tx += pw) {
+        ctx.drawImage(paperImg, tx, ty);
+      }
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+    return canvas;
+  }
+
+  // --- GENERATE ---
+  generateBtn.addEventListener('click', async () => {
+    if (!uploadedImage) return;
+    if (!paperImg1 || !paperImg2) {
+      alert('Paper textures are still loading. Please wait a moment.');
+      return;
+    }
 
     generateBtn.disabled = true;
-    btnText.textContent = 'Processing...';
-    btnSpinner.classList.remove('hidden');
+    generateBtn.textContent = 'Generating...';
+    previewCard.classList.remove('hidden');
+    previewArea.innerHTML = '<div class="spinner"></div>';
 
-    // Wait for paper textures to load
-    await Promise.all([
-      new Promise(r => { if (paperImg1.complete) r(); else paperImg1.onload = r; }),
-      new Promise(r => { if (paperImg2.complete) r(); else paperImg2.onload = r; }),
-    ]);
+    const thickness = parseInt(thicknessSlider.value);
 
-    const w = uploadedImage.width;
-    const h = uploadedImage.height;
+    // Small delay so UI updates
+    await new Promise(r => setTimeout(r, 50));
 
-    if (mode === 'still') {
-      // Generate still image
-      const canvas = compositeFrame(paperImg1, uploadedImage, w, h);
-      canvas.toBlob((blob) => {
-        resultBlob = blob;
-        resultFileName = 'paperfy.png';
-        resultImage.src = URL.createObjectURL(blob);
-        resultSection.classList.remove('hidden');
-        resultSection.classList.add('fade-in');
-        btnText.textContent = 'Generate';
-        btnSpinner.classList.add('hidden');
-        generateBtn.disabled = false;
-        document.getElementById('downloadBtn').textContent = 'Download PNG';
-      }, 'image/png');
-    } else {
-      // Generate animated GIF
-      const interval = parseInt(document.getElementById('intervalSlider').value);
+    try {
+      if (!isAnimated) {
+        // STILL
+        const canvas = renderFrame(paperImg1, uploadedImage, thickness);
+        previewArea.innerHTML = '';
+        previewArea.appendChild(canvas);
+        canvas.toBlob(blob => {
+          resultBlob = blob;
+          resultFileName = 'paperfy-outline.png';
+        }, 'image/png');
+      } else {
+        // ANIMATED GIF
+        const interval = parseInt(intervalSlider.value);
+        const frame1 = renderFrame(paperImg1, uploadedImage, thickness);
+        const frame2 = renderFrame(paperImg2, uploadedImage, thickness);
 
-      // Render frame 1
-      const c1 = compositeFrame(paperImg1, uploadedImage, w, h);
-      const frame1Data = c1.getContext('2d').getImageData(0, 0, w, h);
+        const gif = new GIF({
+          workers: 2,
+          quality: 10,
+          width: uploadedImage.width,
+          height: uploadedImage.height,
+          workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js',
+          transparent: 0x00000000,
+        });
 
-      // Render frame 2
-      const c2 = compositeFrame(paperImg2, uploadedImage, w, h);
-      const frame2Data = c2.getContext('2d').getImageData(0, 0, w, h);
+        gif.addFrame(frame1, { delay: interval, copy: true });
+        gif.addFrame(frame2, { delay: interval, copy: true });
 
-      // Build GIF
-      const gif = new GIF({
-        workers: 2,
-        quality: 10,
-        width: w,
-        height: h,
-        workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js',
-        transparent: 0x00000000,
-      });
+        gif.on('finished', blob => {
+          resultBlob = blob;
+          resultFileName = 'paperfy-outline.gif';
+          const url = URL.createObjectURL(blob);
+          previewArea.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = url;
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '500px';
+          previewArea.appendChild(img);
+          generateBtn.disabled = false;
+          generateBtn.textContent = 'Generate';
+        });
 
-      // Frame canvases
-      const fc1 = document.getElementById('canvasFrame1');
-      fc1.width = w; fc1.height = h;
-      const fctx1 = fc1.getContext('2d');
-      fctx1.putImageData(frame1Data, 0, 0);
-
-      const fc2 = document.getElementById('canvasFrame2');
-      fc2.width = w; fc2.height = h;
-      const fctx2 = fc2.getContext('2d');
-      fctx2.putImageData(frame2Data, 0, 0);
-
-      gif.addFrame(fc1, { delay: interval, copy: true });
-      gif.addFrame(fc2, { delay: interval, copy: true });
-
-      gif.on('finished', (blob) => {
-        resultBlob = blob;
-        resultFileName = 'paperfy.gif';
-        resultImage.src = URL.createObjectURL(blob);
-        resultSection.classList.remove('hidden');
-        resultSection.classList.add('fade-in');
-        btnText.textContent = 'Generate';
-        btnSpinner.classList.add('hidden');
-        generateBtn.disabled = false;
-        document.getElementById('downloadBtn').textContent = 'Download GIF';
-      });
-
-      gif.render();
+        gif.render();
+        return; // button re-enabled in callback
+      }
+    } catch (e) {
+      console.error(e);
+      previewArea.innerHTML = '<p class="text-red-400 text-sm">Error generating result.</p>';
     }
-  }
 
-  function downloadResult() {
+    generateBtn.disabled = false;
+    generateBtn.textContent = 'Generate';
+  });
+
+  // --- DOWNLOAD ---
+  downloadBtn.addEventListener('click', () => {
     if (!resultBlob) return;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(resultBlob);
     a.download = resultFileName;
     a.click();
-  }
+  });
 </script>
 </body>
 </html>
